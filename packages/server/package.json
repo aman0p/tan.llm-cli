@@ -1,0 +1,24 @@
+{
+  "name": "@nightcode/server",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "postinstall": "bun run --cwd ../database db:generate"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
+    "@nightcode/database": "workspace:*",
+    "@nightcode/shared": "workspace:*",
+    "@openrouter/ai-sdk-provider": "^2.10.0",
+    "ai": "^6.0.154",
+    "dotenv": "^17.4.1",
+    "hono": "^4.12.12",
+    "jose": "^6.1.0",
+    "zod": "^4.3.6"
+  }
+}

@@ -1,0 +1,195 @@
+<div align="center">
+
+<br />
+<br />
+
+<h1>NightCode</h1>
+
+<p>A terminal-based AI coding agent.</p>
+
+<p>Plan, chat, and build inside your local project with a Bun-powered CLI, Hono API, Prisma ORM, Neon Auth, and OpenRouter streaming.</p>
+
+<br />
+
+<p>
+  <a href="https://cwa.run/bun?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_bun"><img src="https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white" alt="Bun" /></a>&nbsp;
+  <a href="https://cwa.run/opentui?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_opentui"><img src="https://img.shields.io/badge/OpenTUI-111111?style=for-the-badge" alt="OpenTUI" /></a>&nbsp;
+  <a href="https://cwa.run/react?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_react"><img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" /></a>&nbsp;
+  <a href="https://cwa.run/hono?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_hono"><img src="https://img.shields.io/badge/Hono-E36002?style=for-the-badge&logo=hono&logoColor=white" alt="Hono" /></a>&nbsp;
+  <a href="https://cwa.run/neon?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_neon"><img src="https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=neon&logoColor=black" alt="Neon" /></a>&nbsp;
+  <a href="https://img.shields.io/badge/OpenRouter-484A5B?style=for-the-badge&logo=openrouter&logoColor=white"><img src="https://img.shields.io/badge/OpenRouter-484A5B?style=for-the-badge" alt="OpenRouter" /></a>&nbsp;
+  <a href="https://cwa.run/coderabbit?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_coderabbit"><img src="https://img.shields.io/badge/CodeRabbit-FF6C37?style=for-the-badge&logo=rabbitmq&logoColor=white" alt="CodeRabbit" /></a>&nbsp;
+  <a href="https://cwa.run/sentry?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_sentry"><img src="https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white" alt="Sentry" /></a>&nbsp;
+  <a href="https://cwa.run/railway?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_railway"><img src="https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="Railway" /></a>
+</p>
+
+</div>
+
+<br />
+
+## Tutorial
+
+Each chapter has a matching branch so you can check out the code at any point in the tutorial:
+
+| Branch | Chapter |
+|--------|---------|
+| `main` | Final project |
+| `01-project-setup-component-architecture` | Project setup and component architecture |
+| `02-ui-infrastructure` | Terminal UI infrastructure |
+| `03-routing-screen-layout` | Routing and screen layout |
+| `04-server-shared-database` | Server, shared package, and database |
+| `05-ai-chat-streamiing` | AI chat streaming |
+| `06-session-management-config` | Session management and configuration |
+| `07-tool-calling` | Tool calling |
+| `08-user-experience` | User experience polish |
+| `09-billing` | Billing and credit metering |
+| `10-client-side-tool-execution` | Client-side tool execution |
+| `11-the-end` | Final tutorial state |
+
+```bash
+git checkout 07-tool-calling  # example: jump to tool calling
+```
+
+## Features
+
+- **Terminal AI Chat** - Run an AI coding assistant directly in your terminal with an OpenTUI and React interface
+- **Plan and Build Modes** - Use read-only planning tools or enable write, edit, and shell execution tools for implementation
+- **Streaming Responses** - Stream model output through the AI SDK with persisted session history
+- **Local Project Tools** - Read files, list directories, glob, grep, write files, edit files, and run shell commands inside the current project
+- **Any OpenRouter Model** - Pick any tool-capable model from OpenRouter's live catalog; no hardcoded model registry
+- **Bring Your Own Key** - Store your OpenRouter API key locally with `/set-key`, or use a server-wide env fallback
+- **Persistent Sessions** - Store authenticated user sessions and messages in Postgres via Prisma
+- **Neon Auth** - Authenticate the CLI through a browser-based OAuth 2.1 flow with refresh tokens
+
+## Getting Started
+
+### Prerequisites
+
+- [Bun](https://cwa.run/bun?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=prerequisites_bun) installed
+- PostgreSQL database, such as [Neon](https://cwa.run/neon?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=prerequisites_neon)
+- [Neon Auth](https://neon.com/docs/auth) (Managed Better Auth) enabled on your Neon branch, with the OAuth provider plugin
+- An [OpenRouter](https://openrouter.ai/keys) API key
+
+### 1. Clone and install
+
+```bash
+git clone git@github.com:code-with-antonio/nightcode.git
+cd nightcode
+bun install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Fill in the required values:
+
+```bash
+API_URL=http://localhost:3000
+DATABASE_URL=
+
+# Neon Auth (Managed Better Auth)
+NEON_AUTH_BASE_URL=
+NEON_AUTH_CLIENT_ID=
+NEON_AUTH_RESOURCE=
+
+# Optional server-wide fallback; CLI /set-key takes precedence
+OPENROUTER_API_KEY=
+```
+
+### 3. Set up Neon Auth
+
+NightCode uses Managed Better Auth's OAuth provider plugin so the CLI can sign users in through the browser with PKCE and refresh tokens.
+
+1. In the Neon console, enable **Managed Better Auth** on your branch and note its **Auth URL**. This becomes `NEON_AUTH_BASE_URL`.
+2. Register `http://localhost:3000` as a trusted domain for the branch.
+3. Enable the **OAuth provider** plugin with these settings:
+   - **Login page URL:** `http://localhost:3000/auth/login`
+   - **Consent page URL:** `http://localhost:3000/auth/consent`
+   - **Resource URL:** `http://localhost:3000/nightcode-api` — this becomes `NEON_AUTH_RESOURCE` and must be different from the Auth host.
+4. Create a **public** OAuth client with the exact redirect URI `http://localhost:3000/auth/callback`. No client secret is needed. Copy its client ID into `NEON_AUTH_CLIENT_ID`.
+5. Configure the social and/or email sign-in providers you want on the hosted login page.
+
+The server serves a minimal login page at `/auth/login` and consent page at `/auth/consent`, which pass the signed `oauth_query` back to Managed Better Auth. After approval, `/auth/callback` forwards the code to the CLI's ephemeral localhost callback server.
+
+> **Note:** Neon user IDs differ from the previous Clerk IDs, so existing sessions will no longer be visible. All users must sign in again.
+
+### 4. Set up your OpenRouter key
+
+Run `/set-key` in the CLI and paste your OpenRouter API key. It is stored in `~/.nightcode/auth.json` with owner-only permissions and sent with every request.
+
+Alternatively, set `OPENROUTER_API_KEY` in `.env` as a server-wide fallback. A CLI-stored key always takes precedence, so you can switch keys at any time without restarting the server.
+
+To use a model, run `/models`. NightCode fetches OpenRouter's live catalog, filters out batch and non-tool-capable models, and lets you search by name or full slug. The first tool-capable model in the catalog is selected by default.
+
+### 5. Set up the database
+
+Generate the Prisma client:
+
+```bash
+bun run --cwd packages/database db:generate
+```
+
+Apply your Prisma schema to the configured Postgres database using your preferred Prisma workflow.
+
+### 6. Run the server
+
+```bash
+bun run dev:server
+```
+
+The API runs on `http://localhost:3000`.
+
+### 7. Run the CLI
+
+In another terminal:
+
+```bash
+bun run dev:cli
+```
+
+To build and link the local CLI binary:
+
+```bash
+bun run link:cli
+nightcode
+```
+
+## Project Structure
+
+```
+packages/
+├── cli/                         # OpenTUI + React terminal client
+│   ├── bin/                     # nightcode executable shim
+│   └── src/
+│       ├── components/          # Terminal UI components, dialogs, messages
+│       ├── hooks/               # Chat and UI hooks
+│       ├── layouts/             # Root terminal layouts
+│       ├── lib/                 # API client, auth, OAuth, token refresh, local tool execution
+│       ├── providers/           # Dialog, keyboard, prompt, theme, toast providers
+│       └── screens/             # Home, new session, and session screens
+├── database/                    # Prisma schema, generated client, database exports
+├── server/                      # Hono API for auth, models, sessions, and chat
+└── shared/                      # Shared schemas and tool contracts
+```
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `bun run dev:cli` | Start the CLI in watch mode |
+| `bun run dev:server` | Start the Hono server with hot reload |
+| `bun run build:cli` | Build the CLI package |
+| `bun run link:cli` | Build and link the `nightcode` executable |
+| `bun run --cwd packages/database db:generate` | Generate the Prisma client |
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| `@nightcode/cli` | Terminal UI, key management, and client-side tool execution |
+| `@nightcode/server` | Hono API, OpenRouter streaming, Neon auth verification, and dynamic model catalog |
+| `@nightcode/database` | Prisma client and database schema |
+| `@nightcode/shared` | Shared Zod schemas and AI tool contracts |

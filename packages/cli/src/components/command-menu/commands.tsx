@@ -1,0 +1,133 @@
+import {
+  AgentsDialogContent,
+  ApiKeyDialogContent,
+  ModelsDialogContent,
+  SessionsDialogContent,
+  ThemeDialogContent,
+} from "../dialogs";
+import type { Command } from "./types";
+
+import { performLogin } from "../../lib/oauth";
+import { clearAuth } from "../../lib/auth";
+import { apiClient } from "../../lib/api-client";
+import { getErrorMessage } from "../../lib/http-errors";
+
+export const COMMANDS: Command[] = [
+  {
+    name: "new",
+    description: "Start a new conversation",
+    value: "/new",
+    action: (ctx) => {
+      ctx.navigate("/");
+    },
+  },
+  {
+    name: "agents",
+    description: "Switch agents",
+    value: "/agents",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Select Agent",
+        children: <AgentsDialogContent currentMode={ctx.mode} onSelectMode={ctx.setMode} />,
+      })
+    },
+  },
+  {
+    name: "models",
+    description: "Select AI model for generation",
+    value: "/models",
+    action: async (ctx) => {
+      ctx.toast.show({ message: "Loading models..." });
+
+      try {
+        const response = await apiClient.models.$get();
+        if (!response.ok) throw new Error(await getErrorMessage(response));
+
+        const models = await response.json();
+        ctx.dialog.open({
+          title: "Select Model",
+          children: (
+            <ModelsDialogContent
+              models={models}
+              onSelectModel={ctx.setModel}
+            />
+          ),
+        });
+      } catch (error) {
+        ctx.toast.show({
+          variant: "error",
+          message: error instanceof Error ? error.message : "Failed to load models",
+        });
+      }
+    },
+  },
+  {
+    name: "set-key",
+    description: "Set or update your OpenRouter API key",
+    value: "/set-key",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "OpenRouter API Key",
+        children: <ApiKeyDialogContent />,
+      });
+    },
+  },
+  {
+    name: "sessions",
+    description: "Browse past sessions",
+    value: "/sessions",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Sessions",
+        children: <SessionsDialogContent />,
+      })
+    },
+  },
+  {
+    name: "theme",
+    description: "Change color theme",
+    value: "/theme",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Select Theme",
+        children: <ThemeDialogContent />,
+      })
+    },
+  },
+  {
+    name: "login",
+    description: "Sign in with your browser",
+    value: "/login",
+    action: async (ctx) => {
+      ctx.toast.show({ message: "Opening browser to sign in..." });
+
+      try {
+        await performLogin();
+        ctx.toast.show({ variant: "success", message: "Signed in" });
+      } catch (error) {
+        const message = error instanceof Error
+          ? error.message
+          : "Sign in failed or timed out";
+
+        ctx.toast.show({ variant: "error", message });
+      }
+    },
+  },
+  {
+    name: "logout",
+    description: "Sign out of your account",
+    value: "/logout",
+    action: (ctx) => {
+      clearAuth();
+      ctx.toast.show({ variant: "success", message: "Signed out" });
+    },
+  },
+  {
+    name: "exit",
+    description: "Quit the application",
+    value: "/exit",
+    action: (ctx) => {
+      ctx.exit();
+    },
+  },
+];
