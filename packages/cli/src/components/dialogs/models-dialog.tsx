@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useDialog } from "../../providers/dialog";
 import { DialogSearchList } from "../dialog-search-list";
-import type { OpenRouterModel } from "@nightcode/shared";
+import type { OpenRouterModel } from "@tan.llm/shared";
 
 type ModelsDialogContentProps = {
   models: OpenRouterModel[];

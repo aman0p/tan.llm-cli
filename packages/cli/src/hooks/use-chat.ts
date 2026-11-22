@@ -7,9 +7,11 @@ import {
   type LanguageModelUsage,
   type UIMessage,
 } from "ai";
-import { type ModeType, type ToolContracts } from "@nightcode/shared";
+import { type ModeType, type ToolContracts } from "@tan.llm/shared";
 import { apiClient } from "../lib/api-client";
 import { getOpenRouterApiKey } from "../lib/auth";
+import { getMaxTokensForModel } from "../lib/custom-models";
+import { getPreferences } from "../lib/preferences";
 import { getValidAccessToken } from "../lib/tokens";
 import { executeLocalTool } from "../lib/local-tools";
 
@@ -56,12 +58,16 @@ export function useChat(sessionId: string, initialMessages: Message[]) {
             ? [previousMessage, message]
             : [message];
 
+        const selectedModel = message.metadata?.model ?? metadata?.model ?? "";
+        const maxTokens = getMaxTokensForModel(selectedModel) ?? getPreferences().maxTokens;
+
         return {
           body: {
             id: sessionId,
             messages: requestMessages,
             mode: message.metadata?.mode ?? metadata?.mode,
-            model: message.metadata?.model ?? metadata?.model,
+            model: selectedModel,
+            ...(maxTokens == null ? {} : { maxTokens }),
           },
         }
       }

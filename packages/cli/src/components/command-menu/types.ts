@@ -1,6 +1,6 @@
 import type { DialogContextValue } from "../../providers/dialog";
 import type { ToastContextValue } from "../../providers/toast";
-import type { ModeType } from "@nightcode/shared";
+import type { ModeType } from "@tan.llm/shared";
 
 export type CommandContext = {
   exit: () => void;

@@ -9,14 +9,14 @@ import {
   type LanguageModelUsage,
   type UIMessage,
 } from "ai";
-import { db } from "@nightcode/database/client";
-import type { Prisma } from "@nightcode/database";
+import { db } from "@tan.llm/database/client";
+import type { Prisma } from "@tan.llm/database";
 import {
   getToolContracts,
   modeSchema,
   type ModeType,
   type ToolContracts
-} from "@nightcode/shared";
+} from "@tan.llm/shared";
 import { buildSystemPrompt } from "../system-prompt";
 import type { AuthenticatedEnv } from "../middleware/require-auth";
 import { resolveChatModel } from "../lib/models";
@@ -28,19 +28,20 @@ type ChatMessageMetadata = {
   usage?: LanguageModelUsage;
 };
 
-type nightcodeUIMessage = UIMessage<ChatMessageMetadata, never, InferUITools<ToolContracts>>;
+type tanLlmUIMessage = UIMessage<ChatMessageMetadata, never, InferUITools<ToolContracts>>;
 
 const submitSchema = z.object({
   id: z.string(),
   messages: z
     .array(
-      z.custom<nightcodeUIMessage>((value) => {
+      z.custom<tanLlmUIMessage>((value) => {
         return value != null && typeof value === "object" && "id" in value && "parts" in value;
       }),
     )
     .min(1),
   mode: modeSchema,
   model: z.string().trim().min(1).max(200).regex(/^[^\s]+$/, "Invalid model id"),
+  maxTokens: z.number().int().min(1).max(200_000).optional(),
 });
 
 const submitValidator = zValidator("json", submitSchema, (result, c) => {
@@ -49,7 +50,7 @@ const submitValidator = zValidator("json", submitSchema, (result, c) => {
   }
 });
 
-function hasPendingToolCalls(message: nightcodeUIMessage) {
+function hasPendingToolCalls(message: tanLlmUIMessage) {
   return message.parts.some((part) => {
     if (part.type === "dynamic-tool" || part.type.startsWith("tool-")) {
       const state = (part as { state?: string }).state;
@@ -60,7 +61,7 @@ function hasPendingToolCalls(message: nightcodeUIMessage) {
   });
 };
 
-function isValidUIMessage(message: nightcodeUIMessage): boolean {
+function isValidUIMessage(message: tanLlmUIMessage): boolean {
   return (
     message != null &&
     typeof message.id === "string" &&
@@ -89,7 +90,7 @@ const app = new Hono<AuthenticatedEnv>()
       }
 
       const userId = c.get("userId");
-      const { id, messages, mode, model } = c.req.valid("json");
+      const { id, messages, mode, model, maxTokens } = c.req.valid("json");
 
       const session = await db.session.findUnique({
         where: { id, userId },
@@ -103,7 +104,7 @@ const app = new Hono<AuthenticatedEnv>()
       const tools = getToolContracts(mode);
       const resolvedModel = resolveChatModel(model, apiKey);
       const previousMessages = Array.isArray(session.messages)
-        ? (session.messages as unknown as nightcodeUIMessage[]).filter(isValidUIMessage)
+        ? (session.messages as unknown as tanLlmUIMessage[]).filter(isValidUIMessage)
         : [];
       const mergedMessages = [...previousMessages];
       
@@ -111,7 +112,7 @@ const app = new Hono<AuthenticatedEnv>()
         const incomingMessage = {
           ...message,
           metadata: { ...message.metadata, mode, model },
-        } satisfies nightcodeUIMessage;
+        } satisfies tanLlmUIMessage;
 
         const existingMessageIndex = mergedMessages.findIndex((m) => m.id === incomingMessage.id);
 
@@ -122,7 +123,7 @@ const app = new Hono<AuthenticatedEnv>()
         }
       }
 
-      const nextMessages = await validateUIMessages<nightcodeUIMessage>({
+      const nextMessages = await validateUIMessages<tanLlmUIMessage>({
         messages: mergedMessages.filter(isValidUIMessage),
         tools,
       });
@@ -134,6 +135,7 @@ const app = new Hono<AuthenticatedEnv>()
         system: buildSystemPrompt({ mode }),
         messages: modelMessages,
         tools,
+        maxOutputTokens: maxTokens,
         onFinish(event) {
           completedUsage = event.totalUsage;
         },
@@ -142,7 +144,7 @@ const app = new Hono<AuthenticatedEnv>()
         },
       });
 
-      return result.toUIMessageStreamResponse<nightcodeUIMessage>({
+      return result.toUIMessageStreamResponse<tanLlmUIMessage>({
         originalMessages: nextMessages,
         messageMetadata({ part }) {
           if (part.type === "start") {

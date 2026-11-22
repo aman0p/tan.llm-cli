@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { memo, useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router";
 import { z } from "zod";
 import { useKeyboard } from "@opentui/react";
-import { type ModeType } from "@nightcode/shared";
+import { TextAttributes } from "@opentui/core";
+import { type ModeType } from "@tan.llm/shared";
 import type { InferResponseType } from "hono/client";
 import { SessionShell } from "../components/session-shell";
 import { 
@@ -20,6 +21,8 @@ import { useKeyboardLayer } from "../providers/keyboard-layer";
 
 type SessionData = InferResponseType<(typeof apiClient.sessions)[":id"]["$get"], 200>;
 
+const MAX_RENDERED_MESSAGES = 200;
+
 const sessionLocationSchema = z.object({
   session: z.custom<SessionData>((val) => val != null && typeof val === "object" && "id" in val),
   initialPrompt: z
@@ -31,15 +34,16 @@ const sessionLocationSchema = z.object({
     .optional(),
 });
 
-function ChatMessage(
-  { msg }: {
-    msg: Message
-  }
-) {
+type ChatMessageProps = {
+  msg: Message;
+  streaming?: boolean;
+};
+
+function ChatMessageComponent({ msg, streaming = false }: ChatMessageProps) {
   if (msg.role === "user") {
     const text = msg.parts
-      .filter((p) => p.type === "text")
-      .map((p) => p.text)
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
       .join("");
 
     return <UserMessage message={text} mode={msg.metadata?.mode ?? "BUILD"} />;
@@ -51,10 +55,12 @@ function ChatMessage(
       model={msg.metadata?.model ?? "unknown"}
       mode={msg.metadata?.mode ?? "BUILD"}
       durationMs={msg.metadata?.durationMs}
-      streaming={false}
+      streaming={streaming}
     />
   );
 };
+
+const ChatMessage = memo(ChatMessageComponent);
 
 function SessionChat({ 
   session,
@@ -97,14 +103,30 @@ function SessionChat({
     });
   }, [initialPrompt, submit]);
 
+  const streaming = status === "streaming";
+  const visibleMessages = messages.length > MAX_RENDERED_MESSAGES
+    ? messages.slice(-MAX_RENDERED_MESSAGES)
+    : messages;
+  const hiddenCount = messages.length - visibleMessages.length;
+  const streamingMessageId = messages.at(-1)?.id;
+
   return (
     <SessionShell
       onSubmit={(text) => submit({ userText: text, mode, model })}
-      loading={status === "submitted" || status === "streaming"}
-      interruptible={status === "submitted" || status === "streaming"}
+      loading={status === "submitted" || streaming}
+      interruptible={status === "submitted" || streaming}
     >
-      {messages.map((msg) => (
-        <ChatMessage key={msg.id} msg={msg} />
+      {hiddenCount > 0 ? (
+        <text selectable={false} attributes={TextAttributes.DIM}>
+          Showing last {MAX_RENDERED_MESSAGES} of {messages.length} messages
+        </text>
+      ) : null}
+      {visibleMessages.map((msg) => (
+        <ChatMessage
+          key={msg.id}
+          msg={msg}
+          streaming={streaming && msg.id === streamingMessageId}
+        />
       ))}
       {error && <ErrorMessage message={error.message} />}
     </SessionShell>

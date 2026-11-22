@@ -1,12 +1,17 @@
 {
-  "name": "nightcode",
+  "name": "tan.llm",
   "version": "1.0.0",
   "workspaces": ["packages/*"],
   "scripts": {
     "dev:cli": "bun run --watch packages/cli/src/index.tsx",
     "dev:server": "bun run --hot packages/server/src/index.ts",
-    "build:cli": "bun run --filter @nightcode/cli build",
-    "link:cli": "bun run build:cli && cd packages/cli && bun link"
+    "start": "bun run packages/server/src/index.ts",
+    "build": "bun run db:generate && bun run build:cli && bun run build:server",
+    "build:cli": "bun run --filter @tan.llm/cli build",
+    "build:server": "bun run --filter @tan.llm/server build",
+    "link:cli": "bun run build:cli && cd packages/cli && bun link",
+    "db:generate": "bun run --cwd packages/database db:generate",
+    "db:push": "bun run --cwd packages/database db:push"
   },
   "dependencies": {
     "dotenv": "^17.4.2"

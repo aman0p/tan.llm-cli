@@ -1,5 +1,5 @@
 import { hc } from "hono/client";
-import type { AppType } from "@nightcode/server";
+import type { AppType } from "@tan.llm/server";
 import { clearTokens, getOpenRouterApiKey } from "./auth";
 import { getValidAccessToken, refreshAccessToken } from "./tokens";
 

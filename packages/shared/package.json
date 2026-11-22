@@ -1,5 +1,5 @@
 {
-  "name": "@nightcode/shared",
+  "name": "@tan.llm/shared",
   "type": "module",
   "private": true,
   "exports": {

@@ -2,6 +2,7 @@ import { TextAttributes } from "@opentui/core";
 import type { ReactNode } from "react";
 import { InputBar } from "./input-bar";
 import { Spinner } from "./spinner";
+import { Keycap } from "./ui/keycap";
 import { usePromptConfig } from "../providers/prompt-config";
 
 type Props = {
@@ -32,7 +33,7 @@ export function SessionShell({
       gap={1}
     >
       <scrollbox flexGrow={1} width="100%" stickyScroll stickyStart="bottom">
-        <box>{children}</box>
+        <box width="100%" flexDirection="column" gap={1}>{children}</box>
       </scrollbox>
       <box flexShrink={0}>
         <InputBar onSubmit={onSubmit} disabled={inputDisabled} />
@@ -43,21 +44,27 @@ export function SessionShell({
         justifyContent="space-between"
         width="100%"
         height={1}
-        gap={2}
-        paddingLeft={1}
+        gap={1}
       >
-        <box flexDirection="row" alignItems="center" gap={2}>
+        <box flexDirection="row" alignItems="center" gap={1}>
           {loading ? (
             <>
               <Spinner mode={mode} />
-              {interruptible ? <text>esc to interrupt</text> : null}
+              {interruptible ? (
+                <>
+                  <Keycap>esc</Keycap>
+                  <text attributes={TextAttributes.DIM}>interrupt</text>
+                </>
+              ) : null}
             </>
           ) : null}
         </box>
 
-        <box flexDirection="row" gap={1} flexShrink={0} marginLeft="auto">
-          <text>tab</text>
+        <box flexDirection="row" gap={1} flexShrink={0} alignItems="center">
+          <Keycap>tab</Keycap>
           <text attributes={TextAttributes.DIM}>agents</text>
+          <Keycap>enter</Keycap>
+          <text attributes={TextAttributes.DIM}>send</text>
         </box>
       </box>
     </box>

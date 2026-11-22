@@ -2,6 +2,8 @@ import {
   AgentsDialogContent,
   ApiKeyDialogContent,
   CustomModelDialogContent,
+  DoctorDialogContent,
+  MaxTokensDialogContent,
   ModelsDialogContent,
   SessionsDialogContent,
   ThemeDialogContent,
@@ -73,6 +75,22 @@ export const COMMANDS: Command[] = [
     },
   },
   {
+    name: "preview",
+    description: "Preview the transcript layout without API calls",
+    value: "/preview",
+    action: (ctx) => {
+      ctx.navigate("/preview");
+    },
+  },
+  {
+    name: "preview-long",
+    description: "Preview with a long transcript for performance",
+    value: "/preview-long",
+    action: (ctx) => {
+      ctx.navigate("/preview-long");
+    },
+  },
+  {
     name: "model",
     description: "Add or select a model by OpenRouter slug",
     value: "/model",
@@ -82,6 +100,28 @@ export const COMMANDS: Command[] = [
         children: (
           <CustomModelDialogContent onSelectModel={ctx.setModel} />
         ),
+      });
+    },
+  },
+  {
+    name: "doctor",
+    description: "Check server, auth, model and credit health",
+    value: "/doctor",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Doctor",
+        children: <DoctorDialogContent />,
+      });
+    },
+  },
+  {
+    name: "max-tokens",
+    description: "Set the default max output tokens per reply",
+    value: "/max-tokens",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Max Output Tokens",
+        children: <MaxTokensDialogContent />,
       });
     },
   },

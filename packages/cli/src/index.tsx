@@ -5,6 +5,7 @@ import { RootLayout } from "./layouts/root-layout";
 import { Home } from "./screens/home";
 import { NewSession } from "./screens/new-session";
 import { Session } from "./screens/session";
+import { Preview, PreviewLong } from "./screens/preview";
 
 const router = createMemoryRouter([
   {
@@ -14,6 +15,8 @@ const router = createMemoryRouter([
       { index: true, element: <Home /> },
       { path: "sessions/new", element: <NewSession /> },
       { path: "sessions/:id", element: <Session /> },
+      { path: "preview", element: <Preview /> },
+      { path: "preview-long", element: <PreviewLong /> },
     ]
   }
 ]);

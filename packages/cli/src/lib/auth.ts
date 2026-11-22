@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { CONFIG_DIR } from "./config-dir";
 
 export type AuthData = {
   token: string;
@@ -9,7 +9,7 @@ export type AuthData = {
   openRouterApiKey?: string;
 };
 
-const AUTH_DIR = join(homedir(), ".nightcode");
+const AUTH_DIR = CONFIG_DIR;
 const AUTH_FILE = join(AUTH_DIR, "auth.json");
 
 function readAuthFile(): (Partial<AuthData> & { openRouterApiKey?: string }) | null {

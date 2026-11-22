@@ -1,6 +1,6 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
-import type { OpenRouterModel } from "@nightcode/shared";
+import type { OpenRouterModel } from "@tan.llm/shared";
 
 const MODELS_URL = "https://openrouter.ai/api/v1/models";
 const CACHE_TTL_MS = 60 * 60 * 1000;

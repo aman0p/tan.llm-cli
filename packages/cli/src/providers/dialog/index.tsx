@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
-import { TextAttributes, RGBA } from "@opentui/core";
+import { RGBA } from "@opentui/core";
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import type { DialogConfig } from "./types";
 import { useKeyboardLayer } from "../keyboard-layer";
-import { useTheme } from "../theme";
+import { DialogFrame } from "../../components/ui/dialog-frame";
 
 export type DialogContextValue = {
   open: (config: DialogConfig) => void;
@@ -66,7 +66,6 @@ type DialogProps = {
 function Dialog({ currentDialog, close }: DialogProps) {
   const { isTopLayer } = useKeyboardLayer();
   const dimensions = useTerminalDimensions();
-  const { colors } = useTheme();
 
   useKeyboard((key) => {
     if (!currentDialog || !isTopLayer("dialog")) return;
@@ -95,29 +94,9 @@ function Dialog({ currentDialog, close }: DialogProps) {
       zIndex={100}
       onMouseDown={() => close()}
     >
-      <box
-        width={Math.min(60, dimensions.width - 4)}
-        height="auto"
-        backgroundColor={colors.dialogSurface}
-        paddingX={4}
-        paddingY={1}
-        flexDirection="column"
-        gap={1}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <box
-          paddingBottom={1}
-          flexDirection="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <text attributes={TextAttributes.BOLD}>{title}</text>
-          <text attributes={TextAttributes.DIM} onMouseDown={() => close()}>
-            esc
-          </text>
-        </box>
-        <box flexGrow={1}>{children}</box>
-      </box>
+      <DialogFrame title={title} onClose={close}>
+        {children}
+      </DialogFrame>
     </box>
   );
 };

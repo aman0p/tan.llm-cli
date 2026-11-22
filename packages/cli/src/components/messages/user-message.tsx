@@ -1,5 +1,6 @@
-import { Mode, type ModeType } from "@nightcode/shared";
-import { EmptyBorder } from "../border";
+import { memo } from "react";
+import { Mode, type ModeType } from "@tan.llm/shared";
+import { MessageFrame } from "./message-frame";
 import { useTheme } from "../../providers/theme";
 
 type Props = {
@@ -7,30 +8,18 @@ type Props = {
   mode: ModeType;
 };
 
-export function UserMessage({ message, mode }: Props) {
+function UserMessageComponent({ message, mode }: Props) {
   const { colors } = useTheme();
 
   return (
-    <box width="100%" alignItems="center">
-      <box
-        border={["left"]}
-        borderColor={mode === Mode.PLAN ? colors.planMode : colors.primary}        width="100%"
-        customBorderChars={{
-          ...EmptyBorder,
-          vertical: "┃",
-          bottomLeft: "╹",
-        }}
-      >
-        <box
-          justifyContent="center"
-          paddingX={2}
-          paddingY={1}
-          backgroundColor={colors.surface}
-          width="100%"
-        >
-          <text>{message}</text>
-        </box>
-      </box>
-    </box>
+    <MessageFrame
+      accentColor={mode === Mode.PLAN ? colors.planMode : colors.primary}
+      borderChar="┃"
+      bottomChar="╹"
+    >
+      <text selectable={false}>{message}</text>
+    </MessageFrame>
   );
-};
+}
+
+export const UserMessage = memo(UserMessageComponent);

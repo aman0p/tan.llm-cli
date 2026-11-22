@@ -1,5 +1,5 @@
 {
-  "name": "@nightcode/server",
+  "name": "@tan.llm/server",
   "type": "module",
   "private": true,
   "exports": {
@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
-    "@nightcode/database": "workspace:*",
-    "@nightcode/shared": "workspace:*",
+    "@tan.llm/database": "workspace:*",
+    "@tan.llm/shared": "workspace:*",
     "@openrouter/ai-sdk-provider": "^2.10.0",
     "ai": "^6.0.154",
     "dotenv": "^17.4.1",
