@@ -36,7 +36,7 @@ function page(title: string, body: string, script: string) {
 
 function loginPage(issuer: string, oauthQuery: string) {
   const body = `
-<h1 id="title">Sign in to NightCode</h1>
+<h1 id="title">Sign in to nightcode</h1>
 <form id="email-form">
   <label id="name-label" style="display:none">Name<input id="name" type="text" autocomplete="name" /></label>
   <label>Email<input id="email" type="email" autocomplete="email" required /></label>
@@ -61,12 +61,12 @@ let isSignUp = false;
 
 function log(msg) {
   debugEl.textContent += msg + "\\n";
-  console.log("[NightCode Auth]", msg);
+  console.log("[nightcode Auth]", msg);
 }
 
 function toggleMode() {
   isSignUp = !isSignUp;
-  document.getElementById("title").textContent = isSignUp ? "Create your NightCode account" : "Sign in to NightCode";
+  document.getElementById("title").textContent = isSignUp ? "Create your nightcode account" : "Sign in to nightcode";
   document.getElementById("submit-button").textContent = isSignUp ? "Sign up" : "Sign in";
   document.getElementById("toggle-mode").textContent = isSignUp ? "Have an account? Sign in" : "Need an account? Sign up";
   document.getElementById("name-label").style.display = isSignUp ? "block" : "none";
@@ -168,12 +168,12 @@ document.querySelectorAll("[data-provider]").forEach((button) => {
   });
 });`;
 
-  return page("Sign in to NightCode", body, script);
+  return page("Sign in to nightcode", body, script);
 }
 
 function consentPage(issuer: string, oauthQuery: string) {
   const body = `
-<h1>Authorize NightCode CLI</h1>
+<h1>Authorize nightcode CLI</h1>
 <div class="details" id="client-name">Loading client details...</div>
 <div class="details" id="request"></div>
 <div class="details">This client runs on your machine. Only approve it if you started the login yourself.</div>
@@ -193,7 +193,7 @@ const debugEl = document.getElementById("debug");
 
 function log(msg) {
   debugEl.textContent += msg + "\\n";
-  console.log("[NightCode Auth]", msg);
+  console.log("[nightcode Auth]", msg);
 }
 
 log("Consent page loaded. Query length: " + OAUTH_QUERY.length);
@@ -236,7 +236,7 @@ async function respond(accept) {
 document.getElementById("allow").addEventListener("click", () => respond(true));
 document.getElementById("deny").addEventListener("click", () => respond(false));`;
 
-  return page("Authorize NightCode", body, script);
+  return page("Authorize nightcode", body, script);
 }
 
 const app = new Hono()

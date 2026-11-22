@@ -1,6 +1,7 @@
 import {
   AgentsDialogContent,
   ApiKeyDialogContent,
+  CustomModelDialogContent,
   ModelsDialogContent,
   SessionsDialogContent,
   ThemeDialogContent,
@@ -10,6 +11,7 @@ import type { Command } from "./types";
 import { performLogin } from "../../lib/oauth";
 import { clearAuth } from "../../lib/auth";
 import { apiClient } from "../../lib/api-client";
+import { getCustomModels } from "../../lib/custom-models";
 import { getErrorMessage } from "../../lib/http-errors";
 
 export const COMMANDS: Command[] = [
@@ -44,11 +46,20 @@ export const COMMANDS: Command[] = [
         if (!response.ok) throw new Error(await getErrorMessage(response));
 
         const models = await response.json();
+        const customModels = getCustomModels();
+        const allModels = [
+          ...customModels,
+          ...models.filter(
+            (model: { id: string }) =>
+              !customModels.some((custom) => custom.id.toLowerCase() === model.id.toLowerCase()),
+          ),
+        ];
+
         ctx.dialog.open({
           title: "Select Model",
           children: (
             <ModelsDialogContent
-              models={models}
+              models={allModels}
               onSelectModel={ctx.setModel}
             />
           ),
@@ -59,6 +70,19 @@ export const COMMANDS: Command[] = [
           message: error instanceof Error ? error.message : "Failed to load models",
         });
       }
+    },
+  },
+  {
+    name: "model",
+    description: "Add or select a model by OpenRouter slug",
+    value: "/model",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Add Model by Slug",
+        children: (
+          <CustomModelDialogContent onSelectModel={ctx.setModel} />
+        ),
+      });
     },
   },
   {

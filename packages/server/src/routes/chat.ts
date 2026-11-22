@@ -28,13 +28,13 @@ type ChatMessageMetadata = {
   usage?: LanguageModelUsage;
 };
 
-type NightcodeUIMessage = UIMessage<ChatMessageMetadata, never, InferUITools<ToolContracts>>;
+type nightcodeUIMessage = UIMessage<ChatMessageMetadata, never, InferUITools<ToolContracts>>;
 
 const submitSchema = z.object({
   id: z.string(),
   messages: z
     .array(
-      z.custom<NightcodeUIMessage>((value) => {
+      z.custom<nightcodeUIMessage>((value) => {
         return value != null && typeof value === "object" && "id" in value && "parts" in value;
       }),
     )
@@ -49,7 +49,7 @@ const submitValidator = zValidator("json", submitSchema, (result, c) => {
   }
 });
 
-function hasPendingToolCalls(message: NightcodeUIMessage) {
+function hasPendingToolCalls(message: nightcodeUIMessage) {
   return message.parts.some((part) => {
     if (part.type === "dynamic-tool" || part.type.startsWith("tool-")) {
       const state = (part as { state?: string }).state;
@@ -58,6 +58,16 @@ function hasPendingToolCalls(message: NightcodeUIMessage) {
 
     return false;
   });
+};
+
+function isValidUIMessage(message: nightcodeUIMessage): boolean {
+  return (
+    message != null &&
+    typeof message.id === "string" &&
+    message.id.length > 0 &&
+    Array.isArray(message.parts) &&
+    message.parts.length > 0
+  );
 };
 
 function getApiKey(requestHeader: string | undefined) {
@@ -93,7 +103,7 @@ const app = new Hono<AuthenticatedEnv>()
       const tools = getToolContracts(mode);
       const resolvedModel = resolveChatModel(model, apiKey);
       const previousMessages = Array.isArray(session.messages)
-        ? (session.messages as unknown as NightcodeUIMessage[])
+        ? (session.messages as unknown as nightcodeUIMessage[]).filter(isValidUIMessage)
         : [];
       const mergedMessages = [...previousMessages];
       
@@ -101,7 +111,7 @@ const app = new Hono<AuthenticatedEnv>()
         const incomingMessage = {
           ...message,
           metadata: { ...message.metadata, mode, model },
-        } satisfies NightcodeUIMessage;
+        } satisfies nightcodeUIMessage;
 
         const existingMessageIndex = mergedMessages.findIndex((m) => m.id === incomingMessage.id);
 
@@ -112,8 +122,8 @@ const app = new Hono<AuthenticatedEnv>()
         }
       }
 
-      const nextMessages = await validateUIMessages<NightcodeUIMessage>({
-        messages: mergedMessages,
+      const nextMessages = await validateUIMessages<nightcodeUIMessage>({
+        messages: mergedMessages.filter(isValidUIMessage),
         tools,
       });
       const modelMessages = await convertToModelMessages(nextMessages, { tools });
@@ -127,9 +137,12 @@ const app = new Hono<AuthenticatedEnv>()
         onFinish(event) {
           completedUsage = event.totalUsage;
         },
+        onError(error) {
+          console.error("Chat stream error:", error instanceof Error ? error.message : error);
+        },
       });
 
-      return result.toUIMessageStreamResponse<NightcodeUIMessage>({
+      return result.toUIMessageStreamResponse<nightcodeUIMessage>({
         originalMessages: nextMessages,
         messageMetadata({ part }) {
           if (part.type === "start") {
@@ -148,12 +161,14 @@ const app = new Hono<AuthenticatedEnv>()
         async onFinish(event) {
           if (event.isAborted) return;
 
+          if (!isValidUIMessage(event.responseMessage)) return;
+
           if (hasPendingToolCalls(event.responseMessage)) return;
 
           await db.session.update({
             where: { id, userId },
             data: {
-              messages: event.messages as unknown as Prisma.InputJsonValue,
+              messages: event.messages.filter(isValidUIMessage) as unknown as Prisma.InputJsonValue,
             },
           });
         },

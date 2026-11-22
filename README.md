@@ -3,7 +3,7 @@
 <br />
 <br />
 
-<h1>NightCode</h1>
+<h1>nightcode</h1>
 
 <p>A terminal-based AI coding agent.</p>
 
@@ -19,7 +19,6 @@
   <a href="https://cwa.run/neon?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_neon"><img src="https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=neon&logoColor=black" alt="Neon" /></a>&nbsp;
   <a href="https://img.shields.io/badge/OpenRouter-484A5B?style=for-the-badge&logo=openrouter&logoColor=white"><img src="https://img.shields.io/badge/OpenRouter-484A5B?style=for-the-badge" alt="OpenRouter" /></a>&nbsp;
   <a href="https://cwa.run/coderabbit?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_coderabbit"><img src="https://img.shields.io/badge/CodeRabbit-FF6C37?style=for-the-badge&logo=rabbitmq&logoColor=white" alt="CodeRabbit" /></a>&nbsp;
-  <a href="https://cwa.run/sentry?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_sentry"><img src="https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white" alt="Sentry" /></a>&nbsp;
   <a href="https://cwa.run/railway?utm_source=github&utm_medium=readme&utm_campaign=nightcode&utm_content=badge_railway"><img src="https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="Railway" /></a>
 </p>
 
@@ -101,7 +100,7 @@ OPENROUTER_API_KEY=
 
 ### 3. Set up Neon Auth
 
-NightCode uses Managed Better Auth's OAuth provider plugin so the CLI can sign users in through the browser with PKCE and refresh tokens.
+nightcode uses Managed Better Auth's OAuth provider plugin so the CLI can sign users in through the browser with PKCE and refresh tokens.
 
 1. In the Neon console, enable **Managed Better Auth** on your branch and note its **Auth URL**. This becomes `NEON_AUTH_BASE_URL`.
 2. Register `http://localhost:3000` as a trusted domain for the branch.
@@ -122,7 +121,9 @@ Run `/set-key` in the CLI and paste your OpenRouter API key. It is stored in `~/
 
 Alternatively, set `OPENROUTER_API_KEY` in `.env` as a server-wide fallback. A CLI-stored key always takes precedence, so you can switch keys at any time without restarting the server.
 
-To use a model, run `/models`. NightCode fetches OpenRouter's live catalog, filters out batch and non-tool-capable models, and lets you search by name or full slug. The first tool-capable model in the catalog is selected by default.
+To use a model, run `/models`. nightcode fetches OpenRouter's live catalog, filters out batch and non-tool-capable models, and lets you search by name or full slug. The first tool-capable model in the catalog is selected by default.
+
+To use a model by its slug directly, run `/model` and paste the slug, for example `thinkingmachines/inkling-2-mini`. It is saved in `~/.nightcode/custom-models.json` and also appears in `/models`.
 
 ### 5. Set up the database
 
