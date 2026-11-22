@@ -178,6 +178,19 @@ Keep `NEON_AUTH_RESOURCE` as the value registered in Neon Auth. Changing it requ
 
 ### 2. Deploy the server
 
+#### Railway
+
+Railway does not auto-detect Bun, so the included `Dockerfile` is used automatically.
+
+1. Create a new project and choose **Deploy from GitHub repo**.
+2. Add the environment variables below in the service's **Variables** tab.
+3. In **Settings → Build**, confirm the builder is **Dockerfile** using `Dockerfile`.
+4. In **Settings → Deploy**, set **Start Command** to `bun run start` and **Healthcheck Path** to `/health`.
+5. In **Settings → Networking**, click **Generate Domain** to get your public URL.
+6. Apply the schema once before the first deploy with `bun run db:push` using the production `DATABASE_URL`.
+
+#### Any host
+
 Set these environment variables on your host (see `.env.example`):
 
 ```bash
