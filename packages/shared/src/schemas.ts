@@ -10,6 +10,50 @@ export const modeSchema = z.enum([Mode.BUILD, Mode.PLAN]);
 
 export type ModeType = (typeof Mode)[keyof typeof Mode];
 
+export const skillSummarySchema = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().min(1).max(100),
+  description: z.string().max(500),
+});
+
+export type SkillSummary = z.infer<typeof skillSummarySchema>;
+
+export const questionInputSchema = z.object({
+  questions: z
+    .array(
+      z.object({
+        question: z.string().min(1).max(500),
+        header: z.string().min(1).max(30).optional(),
+        options: z
+          .array(
+            z.object({
+              label: z.string().min(1).max(100),
+              description: z.string().max(300).optional(),
+            }),
+          )
+          .min(2)
+          .max(5),
+        multiple: z.boolean().optional(),
+      }),
+    )
+    .min(1)
+    .max(4),
+});
+
+export type QuestionInput = z.infer<typeof questionInputSchema>;
+
+export const questionOutputSchema = z.object({
+  answers: z.array(
+    z.object({
+      question: z.string(),
+      answer: z.union([z.string(), z.array(z.string())]),
+      multiple: z.boolean(),
+    }),
+  ),
+});
+
+export type QuestionOutput = z.infer<typeof questionOutputSchema>;
+
 export const toolInputSchemas = {
   readFile: z.object({
     path: z.string().describe("Relative path to the file to read"),
@@ -40,6 +84,12 @@ export const toolInputSchemas = {
     description: z.string().optional().describe("Short description of the command"),
     timeout: z.number().optional().describe("Timeout in milliseconds"),
   }),
+  loadSkill: z.object({
+    id: z.string().describe("ID of the skill to load"),
+  }),
+  question: questionInputSchema.describe(
+    "Ask the user one or more multiple-choice questions and wait for the answers",
+  ),
 } as const;
 
 export const readOnlyToolContracts = {
@@ -59,6 +109,15 @@ export const readOnlyToolContracts = {
     description:
       "Search file contents with a regular expression under the current project directory.",
     inputSchema: toolInputSchemas.grep,
+  }),
+  loadSkill: tool({
+    description: "Load the full instructions for an available skill by its ID.",
+    inputSchema: toolInputSchemas.loadSkill,
+  }),
+  question: tool({
+    description:
+      "Ask the user one or more multiple-choice questions and return their answers.",
+    inputSchema: toolInputSchemas.question,
   }),
 } as const;
 

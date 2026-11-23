@@ -96,8 +96,52 @@ export async function runDoctor(): Promise<DoctorResult[]> {
   }
 
   try {
-    await getValidAccessToken();
-    results.push({ label: "Auth", status: "ok", detail: "Access token is valid" });
+    const token = await getValidAccessToken();
+    if (!token) {
+      results.push({
+        label: "Auth",
+        status: "error",
+        detail: "Not signed in",
+        hint: "Run /login to sign in again",
+      });
+    } else {
+      results.push({ label: "Auth", status: "ok", detail: "Access token is valid" });
+
+      try {
+        const response = await fetch(`${API_URL}/sessions`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+
+        if (response.status === 401) {
+          results.push({
+            label: "Server auth",
+            status: "error",
+            detail: "Server rejected the access token",
+            hint: "Check NEON_AUTH_BASE_URL and NEON_AUTH_RESOURCE on the server, then redeploy",
+          });
+        } else if (!response.ok) {
+          results.push({
+            label: "Server auth",
+            status: "warn",
+            detail: `Server returned status ${response.status}`,
+            hint: "Check the server logs and that db:push was run",
+          });
+        } else {
+          results.push({
+            label: "Server auth",
+            status: "ok",
+            detail: "Server accepted the access token",
+          });
+        }
+      } catch (error) {
+        results.push({
+          label: "Server auth",
+          status: "warn",
+          detail: `Could not check server auth: ${error instanceof Error ? error.message : "unknown error"}`,
+        });
+      }
+    }
   } catch {
     results.push({
       label: "Auth",
@@ -124,11 +168,12 @@ export async function runDoctor(): Promise<DoctorResult[]> {
         detail: `$${remaining.toFixed(2)} remaining`,
         hint: remaining <= 1 ? "Add credits at openrouter.ai/settings/credits" : undefined,
       });
-    } catch {
+    } catch (error) {
       results.push({
         label: "OpenRouter credits",
         status: "info",
-        detail: "Could not fetch credit balance",
+        detail: `Could not fetch credit balance: ${error instanceof Error ? error.message : "unknown error"}`,
+        hint: "Check that /set-key used a valid OpenRouter API key",
       });
     }
   } else {

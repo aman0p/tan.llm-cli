@@ -1,12 +1,126 @@
 import { mkdir, readFile, readdir, stat, writeFile } from "fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "path";
-import { toolInputSchemas, Mode, type ModeType } from "@tan.llm/shared";
+import {
+  toolInputSchemas,
+  Mode,
+  type ModeType,
+  type QuestionInput,
+  type QuestionOutput,
+} from "@tan.llm/shared";
+import type { DiscoveredSkill } from "./skills";
+import {
+  resolvePermission,
+  saveAllowRule,
+  type PermissionConfig,
+  type PermissionRule,
+} from "./permissions";
 
 const MAX_FILE_SIZE = 10_000;
 const MAX_RESULTS = 200;
 const MAX_MATCHES = 50;
 const MAX_OUTPUT = 20_000;
 const DEFAULT_TIMEOUT = 30_000;
+
+const PERMISSION_ACTIONS: Record<string, string> = {
+  readFile: "read",
+  listDirectory: "read",
+  glob: "glob",
+  grep: "grep",
+  writeFile: "edit",
+  editFile: "edit",
+  bash: "shell",
+  loadSkill: "skill",
+  question: "question",
+};
+
+const PLAN_ALLOWED_TOOLS = new Set([
+  "readFile",
+  "listDirectory",
+  "glob",
+  "grep",
+  "loadSkill",
+  "question",
+]);
+
+export type PermissionChoice = "once" | "always" | "reject";
+
+export type ToolExecutionContext = {
+  mode: ModeType;
+  skills: DiscoveredSkill[];
+  permissions: PermissionConfig;
+  askPermission: (request: {
+    action: string;
+    resource: string;
+    rule?: PermissionRule;
+  }) => Promise<PermissionChoice>;
+  askQuestion: (input: QuestionInput) => Promise<QuestionOutput>;
+  onAllowAlways?: (rule: PermissionRule) => void;
+};
+
+function asRecord(input: unknown): Record<string, unknown> {
+  return input != null && typeof input === "object" ? (input as Record<string, unknown>) : {};
+}
+
+function relativeResource(value: unknown): string {
+  const raw = typeof value === "string" && value.length > 0 ? value : ".";
+  const rel = relative(process.cwd(), resolve(process.cwd(), raw));
+  return rel.replace(/\\/g, "/") || ".";
+}
+
+function toolResource(toolName: string, input: unknown): { action: string; resource: string } {
+  const values = asRecord(input);
+  const action = PERMISSION_ACTIONS[toolName] ?? toolName;
+
+  switch (toolName) {
+    case "readFile":
+    case "listDirectory":
+    case "writeFile":
+    case "editFile":
+      return { action, resource: relativeResource(values.path) };
+    case "glob":
+    case "grep":
+      return { action, resource: relativeResource(values.path) };
+    case "bash":
+      return { action, resource: typeof values.command === "string" ? values.command : "" };
+    case "loadSkill":
+      return { action, resource: typeof values.id === "string" ? values.id : "" };
+    case "question":
+      return { action, resource: "*" };
+    default:
+      return { action, resource: "*" };
+  }
+}
+
+async function enforcePermission(
+  toolName: string,
+  input: unknown,
+  ctx: ToolExecutionContext,
+): Promise<void> {
+  const { action, resource } = toolResource(toolName, input);
+  const decision = resolvePermission(ctx.permissions, action, resource);
+
+  if (decision.effect === "deny") {
+    throw new Error(`Permission denied: ${action} ${resource}`.trim());
+  }
+
+  if (decision.effect !== "ask") return;
+
+  const answer = await ctx.askPermission({
+    action,
+    resource,
+    ...(decision.rule ? { rule: decision.rule } : {}),
+  });
+
+  if (answer === "reject") {
+    throw new Error(`Permission rejected: ${action} ${resource}`.trim());
+  }
+
+  if (answer === "always") {
+    const rule: PermissionRule = { action, resource, effect: "allow" };
+    saveAllowRule(rule);
+    ctx.onAllowAlways?.(rule);
+  }
+}
 
 function resolveInsideCwd(path: string) {
   const cwd = process.cwd();
@@ -26,10 +140,16 @@ function truncate(value: string, limit: number) {
     : value;
 }
 
-export async function executeLocalTool(toolName: string, input: unknown, mode: ModeType) {
-  if (mode === Mode.PLAN && !["readFile", "listDirectory", "glob", "grep"].includes(toolName)) {
+export async function executeLocalTool(
+  toolName: string,
+  input: unknown,
+  ctx: ToolExecutionContext,
+) {
+  if (ctx.mode === Mode.PLAN && !PLAN_ALLOWED_TOOLS.has(toolName)) {
     throw new Error(`Tool ${toolName} is not available in PLAN mode`);
   }
+
+  await enforcePermission(toolName, input, ctx);
 
   switch (toolName) {
     case "readFile": {
@@ -112,7 +232,7 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         if (match) {
           matches.push({
             file: relative(cwd, match[1]!),
-            line: Number(match[2]),
+            line: Number(match[2]!),
             content: match[3]!,
           });
         }
@@ -163,6 +283,23 @@ export async function executeLocalTool(toolName: string, input: unknown, mode: M
         stderr: truncate(stderr, MAX_OUTPUT),
         exitCode,
       };
+    }
+    case "loadSkill": {
+      const { id } = toolInputSchemas.loadSkill.parse(input);
+      const skill = ctx.skills.find((candidate) => candidate.id === id);
+      if (!skill) throw new Error(`Unknown skill: ${id}`);
+
+      return {
+        id: skill.id,
+        name: skill.name,
+        description: skill.description,
+        content: skill.content,
+        ...(skill.truncated ? { truncated: true } : {}),
+      };
+    }
+    case "question": {
+      const parsed = toolInputSchemas.question.parse(input);
+      return ctx.askQuestion(parsed);
     }
     default:
       throw new Error(`Unknown tool: ${toolName}`);

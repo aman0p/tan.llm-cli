@@ -5,7 +5,9 @@ import {
   DoctorDialogContent,
   MaxTokensDialogContent,
   ModelsDialogContent,
+  PermissionsDialogContent,
   SessionsDialogContent,
+  SkillsDialogContent,
   ThemeDialogContent,
 } from "../dialogs";
 import type { Command } from "./types";
@@ -34,6 +36,28 @@ export const COMMANDS: Command[] = [
         title: "Select Agent",
         children: <AgentsDialogContent currentMode={ctx.mode} onSelectMode={ctx.setMode} />,
       })
+    },
+  },
+  {
+    name: "skills",
+    description: "Browse and toggle reusable skills",
+    value: "/skills",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Skills",
+        children: <SkillsDialogContent />,
+      });
+    },
+  },
+  {
+    name: "permissions",
+    description: "Show effective permission rules",
+    value: "/permissions",
+    action: (ctx) => {
+      ctx.dialog.open({
+        title: "Permissions",
+        children: <PermissionsDialogContent />,
+      });
     },
   },
   {

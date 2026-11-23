@@ -58,6 +58,9 @@ git checkout 07-tool-calling  # example: jump to tool calling
 - **Any OpenRouter Model** - Pick any tool-capable model from OpenRouter's live catalog; no hardcoded model registry
 - **Bring Your Own Key** - Store your OpenRouter API key locally with `/set-key`, or use a server-wide env fallback
 - **Persistent Sessions** - Store authenticated user sessions and messages in Postgres via Prisma
+- **Skills** - Reusable `SKILL.md` instruction packs, discovered locally and loaded by the agent on demand
+- **Permission Rules** - Ordered `allow` / `ask` / `deny` rules for shell, file, and skill actions, with interactive approvals
+- **Question Tool** - Let the agent pause and ask multiple-choice questions when it needs a decision
 - **Neon Auth** - Authenticate the CLI through a browser-based OAuth 2.1 flow with refresh tokens
 
 ## Getting Started
@@ -225,6 +228,61 @@ export NEON_AUTH_RESOURCE=http://localhost:3000/nightcode-api
 ```
 
 Run `/doctor` in the CLI to verify the connection.
+
+## Skills
+
+Skills are reusable instruction packs. Create one under your project or in your home directory:
+
+```text
+.tan.llm/skills/git-release/SKILL.md     # project skill, shareable with your team
+~/.tan.llm/skills/review.md              # personal skill, available everywhere
+```
+
+```markdown
+---
+name: Git Release
+description: Prepare release notes and version bumps
+---
+
+## Workflow
+
+1. Summarize merged changes since the previous tag.
+2. Propose a version bump before changing files.
+3. Run `scripts/changelog.ts` after approval.
+```
+
+- The skill ID comes from the folder or file name (use lowercase kebab-case).
+- A `description` is required so the agent knows when to load the skill.
+- Related scripts and references live beside `SKILL.md`; paths inside the skill are relative to that directory.
+- Use `/skills` to enable or disable skills, or write `@skill-id` in a prompt to request one explicitly.
+- The agent can also call `loadSkill` itself when the task matches a skill's description.
+- Project skills override global skills with the same ID.
+- Add `metadata.opencode/autoinvoke: false` or `disable-model-invocation: true` to hide a skill from automatic discovery.
+
+For compatibility, `.opencode/skills`, `.claude/skills`, and `.agents/skills` are also discovered.
+
+## Permissions
+
+Permission rules are enforced in the CLI before any local tool runs. Defaults allow all actions, except reads of `.env` files ask for approval. PLAN mode restrictions cannot be overridden.
+
+Create `.tan.llm/config.json` in your project or `~/.tan.llm/config.json` globally:
+
+```json
+{
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "ask" },
+    { "action": "shell", "resource": "git status *", "effect": "allow" },
+    { "action": "shell", "resource": "git push *", "effect": "deny" },
+    { "action": "read", "resource": "*.env*", "effect": "ask" }
+  ]
+}
+```
+
+Supported actions: `read`, `edit`, `glob`, `grep`, `shell`, `skill`, `question`, and `*`. Resources are paths, shell commands, or skill IDs. Wildcards `*` and `?` are supported, and the last matching rule wins. Shell patterns ending in ` *` also match the bare command.
+
+When a rule resolves to `ask`, you can allow once, allow always (saved as a project-scoped approval), or reject. Run `/permissions` to inspect the effective rule list and config paths.
+
+> **Note:** Shell matching uses the command text, not a security sandbox. Commands can still do anything your user account can do. Use narrow allowlists for dangerous operations.
 
 ## Project Structure
 

@@ -6,3 +6,7 @@ export { CustomModelDialogContent } from "./custom-model-dialog";
 export { DoctorDialogContent } from "./doctor-dialog";
 export { MaxTokensDialogContent } from "./max-tokens-dialog";
 export { ApiKeyDialogContent } from "./api-key-dialog";
+export { SkillsDialogContent } from "./skills-dialog";
+export { PermissionsDialogContent } from "./permissions-dialog";
+export { askPermission, type PermissionChoice } from "./permission-dialog";
+export { askQuestions } from "./question-dialog";

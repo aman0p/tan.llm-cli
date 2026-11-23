@@ -14,6 +14,7 @@ import type { Prisma } from "@tan.llm/database";
 import {
   getToolContracts,
   modeSchema,
+  skillSummarySchema,
   type ModeType,
   type ToolContracts
 } from "@tan.llm/shared";
@@ -42,6 +43,7 @@ const submitSchema = z.object({
   mode: modeSchema,
   model: z.string().trim().min(1).max(200).regex(/^[^\s]+$/, "Invalid model id"),
   maxTokens: z.number().int().min(1).max(200_000).optional(),
+  skills: z.array(skillSummarySchema).max(50).default([]),
 });
 
 const submitValidator = zValidator("json", submitSchema, (result, c) => {
@@ -90,7 +92,7 @@ const app = new Hono<AuthenticatedEnv>()
       }
 
       const userId = c.get("userId");
-      const { id, messages, mode, model, maxTokens } = c.req.valid("json");
+      const { id, messages, mode, model, maxTokens, skills } = c.req.valid("json");
 
       const session = await db.session.findUnique({
         where: { id, userId },
@@ -132,7 +134,7 @@ const app = new Hono<AuthenticatedEnv>()
 
       const result = streamText({
         model: resolvedModel,
-        system: buildSystemPrompt({ mode }),
+        system: buildSystemPrompt({ mode, skills }),
         messages: modelMessages,
         tools,
         maxOutputTokens: maxTokens,

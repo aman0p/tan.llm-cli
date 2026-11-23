@@ -1,12 +1,15 @@
-import type { ModeType } from "@tan.llm/shared";
+import type { ModeType, SkillSummary } from "@tan.llm/shared";
 
 type SystemPromptParams = {
   mode: ModeType;
+  skills?: SkillSummary[];
 };
 
-export function buildSystemPrompt({ 
-  mode
-}: SystemPromptParams): string {
+function clean(value: string, max: number): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+export function buildSystemPrompt({ mode, skills = [] }: SystemPromptParams): string {
   const parts: string[] = [];
 
   parts.push(`You are an expert software engineer working as a coding assistant inside a terminal application.
@@ -40,14 +43,15 @@ export function buildSystemPrompt({
     - **listDirectory** — List entries in a directory
     - **glob** — Find files matching a pattern (e.g. "**/*.ts")
     - **grep** — Search file contents with regex
+    - **question** — Ask the user a multiple-choice question when you need a decision
+    - **loadSkill** — Load a skill's full instructions when one matches the task
 
     ### Rules
     1. **Be decisive.** Use glob/grep to find what's relevant, then read only those files. Don't read every file in the project.
     2. **Never re-read files you already read** in this conversation.
-    3. **Batch your tool calls.** Call multiple tools in parallel when possible (e.g. read 5 files at once, not one at a time).`);
-  }
-
-    if (mode === "BUILD") {
+    3. **Batch your tool calls.** Call multiple tools in parallel when possible (e.g. read 5 files at once, not one at a time).
+    4. If a tool call is rejected by a permission rule, explain the blocker to the user instead of retrying the same call.`);
+  } else {
     parts.push(`
     ## Tool Usage
     You have these tools available:
@@ -58,11 +62,34 @@ export function buildSystemPrompt({
     - **glob** — Find files matching a pattern (e.g. "**/*.ts")
     - **grep** — Search file contents with regex
     - **bash** — Run a shell command
+    - **question** — Ask the user a multiple-choice question when you need a decision
+    - **loadSkill** — Load a skill's full instructions when one matches the task
+
     ### Rules
     1. **Be decisive.** Use glob/grep to find what's relevant, then read only those files. Don't read every file in the project.
     2. **Never re-read files you already read** in this conversation.
     3. **Batch your tool calls.** Call multiple tools in parallel when possible (e.g. read 5 files at once, not one at a time).
-    4. **Use editFile for small changes** to existing files. Only use writeFile when creating new files or rewriting most of a file.`);
+    4. **Use editFile for small changes** to existing files. Only use writeFile when creating new files or rewriting most of a file.
+    5. If a tool call is rejected by a permission rule, explain the blocker to the user instead of retrying the same call.`);
+  }
+
+  if (skills.length > 0) {
+    const catalog = skills
+      .map((skill) => {
+        const id = clean(skill.id, 64);
+        const name = clean(skill.name, 100);
+        const description = clean(skill.description, 500);
+        return `- ${id} — ${name}: ${description}`;
+      })
+      .join("\n");
+
+    parts.push(`
+    ## Skills
+    Reusable instruction packs are available. When a task matches a skill's description,
+    call **loadSkill** with its id to read the full instructions before proceeding.
+    If the user writes @<id> in their prompt, load that skill first. Do not load unrelated skills.
+
+    ${catalog}`);
   }
 
   return parts.join("\n");
